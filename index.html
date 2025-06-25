@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIVI Transfer</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <style>
+    body {
+      background-color: #0e0e0e;
+      color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+    }
+    input {
+      width: 250px;
+    }
+    button {
+      background-color: #ff9900;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e68a00;
+    }
+  </style>
+</head>
+<body>
+  <h1>VIVI Token Transfer</h1>
+  <p>Send VIVI with 1 BNB fee</p>
+  <input type="text" id="recipient" placeholder="Recipient Address" /><br />
+  <input type="number" id="amount" placeholder="Amount of VIVI" /><br />
+  <button onclick="sendVIVI()">Send</button>
+  <p id="status"></p>
+
+  <script>
+    const contractAddress = "0xB3E705B23acef2497aB236d92d13EBe30b4c3FDc";
+    const contractABI = [
+      {
+        "inputs": [
+          { "internalType": "address", "name": "to", "type": "address" },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" }
+        ],
+        "name": "transferWithFee",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      }
+    ];
+
+    async function sendVIVI() {
+      if (typeof window.ethereum ===  undefined ) {
+        alert( Please install MetaMask! );
+        return;
+      }
+
+      const recipient = document.getElementById("recipient").value;
+      const amount = document.getElementById("amount").value;
+
+      const web3 = new Web3(window.ethereum);
+      await window.ethereum.request({ method:  eth_requestAccounts  });
+
+      const accounts = await web3.eth.getAccounts();
+      const sender = accounts[0];
+      const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+      const decimals = 18;
+      const viviAmount = web3.utils.toBN(amount).mul(web3.utils.toBN(10).pow(web3.utils.toBN(decimals)));
+
+      document.getElementById("status").innerText = "Sending...";
+
+      contract.methods.transferWithFee(recipient, viviAmount).send({
+        from: sender,
+        value: web3.utils.toWei("1", "ether")
+      })
+      .then(receipt => {
+        document.getElementById("status").innerText = "✅ Transaction Successful!";
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById("status").innerText = "❌ Error: " + err.message;
+      });
+    }
+  </script>
+</body>
+</html>
